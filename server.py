@@ -41,6 +41,7 @@ log = logging.getLogger("arena2api")
 # 配置
 # ============================================================
 PORT = int(os.environ.get("PORT", "9090"))
+API_KEY = os.environ.get("API_KEY", "").strip()
 ARENA_BASE = "https://arena.ai"
 ARENA_CREATE_EVAL = f"{ARENA_BASE}/nextjs-api/stream/create-evaluation"
 ARENA_POST_EVAL = f"{ARENA_BASE}/nextjs-api/stream/post-to-evaluation"  # + /{id}
@@ -194,6 +195,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+def verify_api_key(request: Request):
+    """Optional API key auth for OpenAI endpoints.
+
+    If API_KEY is set, require: Authorization: Bearer <API_KEY>
+    """
+    if not API_KEY:
+        return
+
+    auth_header = request.headers.get("authorization", "")
+    expected = f"Bearer {API_KEY}"
+    if auth_header != expected:
+        raise HTTPException(status_code=401, detail="Invalid API key")
+
 
 # ============================================================
 # 扩展端点
@@ -223,8 +237,9 @@ async def extension_status():
 # OpenAI 兼容端点
 # ============================================================
 @app.get("/v1/models")
-async def list_models():
+async def list_models(request: Request):
     """列出可用模型"""
+    verify_api_key(request)
     all_models = {}
     all_models.update(store.text_models)
     all_models.update(store.image_models)
@@ -265,6 +280,7 @@ def detect_client(request: Request) -> str:
 @app.post("/v1/chat/completions")
 async def chat_completions(request: Request):
     """OpenAI 兼容的聊天补全"""
+    verify_api_key(request)
     try:
         body = await request.json()
     except Exception:
