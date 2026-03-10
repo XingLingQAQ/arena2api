@@ -201,6 +201,7 @@ for chunk in response:
 | 环境变量 | 默认值 | 说明 |
 |---------|--------|------|
 | `PORT` | `9090` | 服务器监听端口 |
+| `API_KEY` | - | （可选）启用 OpenAI 风格鉴权，要求 `Authorization: Bearer <API_KEY>` |
 | `DEBUG` | - | 设置任意值开启调试日志 |
 
 ### 扩展
